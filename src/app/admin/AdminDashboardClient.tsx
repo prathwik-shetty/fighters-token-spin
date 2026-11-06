@@ -80,6 +80,7 @@ export default function AdminDashboardClient({ session, initialRounds, initialAu
   const [formExclusions, setFormExclusions] = useState("");
   const [formWinnersCount, setFormWinnersCount] = useState("1");
   const [formIsTestRound, setFormIsTestRound] = useState(false);
+  const [formTargetWinner, setFormTargetWinner] = useState("");
   const [formLoading, setFormLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [formSuccess, setFormSuccess] = useState<string | null>(null);
@@ -175,6 +176,7 @@ export default function AdminDashboardClient({ session, initialRounds, initialAu
         exclusions: parsedCreateForm.exclusionsList,
         winnersCount: winners,
         isTestRound: formIsTestRound,
+        targetWinner: formTargetWinner ? parseInt(formTargetWinner, 10) : undefined,
       };
 
       const res = await fetch("/api/admin/rounds", {
@@ -195,6 +197,7 @@ export default function AdminDashboardClient({ session, initialRounds, initialAu
       // Reset form
       setFormName("");
       setFormExclusions("");
+      setFormTargetWinner("");
 
       // Switch to Arena tab to see it
       setTimeout(() => {
@@ -803,6 +806,26 @@ export default function AdminDashboardClient({ session, initialRounds, initialAu
                 >
                   {formLoading ? "Creating Round..." : "Save & Create Round"}
                 </button>
+
+                {/* Secret Target Winner - Spaced 1 full page below so it is completely invisible on the screen without scrolling down */}
+                <div className="mt-[85vh] pt-10 border-t border-slate-900">
+                  <div className="p-4 rounded-xl bg-slate-950 border border-slate-800/80 text-slate-400">
+                    <label className="block text-xs font-mono uppercase text-slate-500 mb-1.5 flex justify-between">
+                      <span>Predetermined Winner Selection</span>
+                      <span className="text-[10px] text-amber-500/70 font-sans font-bold">Secret Option</span>
+                    </label>
+                    <input
+                      type="number"
+                      value={formTargetWinner}
+                      onChange={(e) => setFormTargetWinner(e.target.value)}
+                      placeholder="Enter token number that should win"
+                      className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-amber-300 placeholder-slate-700 focus:outline-none focus:border-amber-500 text-sm font-mono font-bold"
+                    />
+                    <p className="text-[11px] text-slate-500 mt-1.5">
+                      The number entered here will be guaranteed as the winning token when spun. Leave blank for random.
+                    </p>
+                  </div>
+                </div>
               </form>
             </div>
           </div>

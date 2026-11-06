@@ -38,26 +38,32 @@ export const CasinoReel: React.FC<CasinoReelProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const animationFrameRef = useRef<number | null>(null);
   const lastTickTimeRef = useRef<number>(0);
-  const tickIntervalRef = useRef<number>(60); // ms between ticks
+  const tickIntervalRef = useRef<number>(60);
+  const hasCompletedRef = useRef<boolean>(false);
 
   // Check initial mute state and prefers-reduced-motion
   useEffect(() => {
     setIsMuted(soundManager.getMuted());
-    const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReducedMotion(mql.matches);
-    const listener = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
-    mql.addEventListener("change", listener);
-    return () => mql.removeEventListener("change", listener);
+    try {
+      const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
+      setReducedMotion(mql.matches);
+      const listener = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
+      mql.addEventListener("change", listener);
+      return () => mql.removeEventListener("change", listener);
+    } catch {
+      setReducedMotion(false);
+    }
   }, []);
 
   // Build the strip of numbers for the reel
-  // The final item in the strip (at index TOTAL_STRIP_ITEMS - 1) will be the targetNumber
   const reelStrip = useMemo(() => {
     const list: number[] = [];
     const span = Math.max(1, rangeEnd - rangeStart + 1);
 
     for (let i = 0; i < TOTAL_STRIP_ITEMS - 1; i++) {
-      const randNum = rangeStart + (Math.floor(Math.sin(i * 997 + 13) * 100000) % span + span) % span;
+      const randNum =
+        rangeStart +
+        (((Math.floor(Math.sin(i * 997 + 13) * 100000) % span) + span) % span);
       list.push(randNum);
     }
 
@@ -71,9 +77,8 @@ export const CasinoReel: React.FC<CasinoReelProps> = ({
 
   // Handle spin animation
   useEffect(() => {
-    if (!isSpinning || targetNumber === null) {
-      if (targetNumber !== null && !isSpinning) {
-        // Already finished or static display
+    if (!isSpinning) {
+      if (targetNumber !== null) {
         setCurrentY(targetOffsetY);
         setHasLanded(true);
         setFlickerNumber(targetNumber);
@@ -82,20 +87,19 @@ export const CasinoReel: React.FC<CasinoReelProps> = ({
     }
 
     setHasLanded(false);
+    hasCompletedRef.current = false;
     const startTimestamp = spinStartTime ? new Date(spinStartTime).getTime() : Date.now();
     const effectiveDuration = reducedMotion ? Math.min(2000, durationMs) : durationMs;
 
     const animate = () => {
       const now = Date.now();
-      const elapsed = now - startTimestamp;
+      const elapsed = Math.max(0, now - startTimestamp);
       const progress = Math.min(1, Math.max(0, elapsed / effectiveDuration));
 
-      // Ease-out cubic easing function: 1 - Math.pow(1 - progress, 3)
-      // Gives fast initial spin then smooth gradual deceleration
+      // Ease-out cubic easing function
       const easeOutCubic = 1 - Math.pow(1 - progress, 3);
 
       if (reducedMotion) {
-        // Reduced motion: fade and pulse numbers
         if (progress < 1) {
           const randomInRange =
             rangeStart + Math.floor(Math.random() * (rangeEnd - rangeStart + 1));
@@ -105,13 +109,18 @@ export const CasinoReel: React.FC<CasinoReelProps> = ({
           setFlickerNumber(targetNumber);
           setCurrentY(targetOffsetY);
           setHasLanded(true);
-          soundManager.playWin();
-          confetti({
-            particleCount: 80,
-            spread: 70,
-            origin: { y: 0.6 },
-          });
-          if (onComplete) onComplete();
+          try {
+            soundManager.playWin();
+            confetti({
+              particleCount: 60,
+              spread: 60,
+              origin: { y: 0.6 },
+            });
+          } catch {}
+          if (!hasCompletedRef.current) {
+            hasCompletedRef.current = true;
+            if (onComplete) onComplete();
+          }
         }
         return;
       }
@@ -120,15 +129,15 @@ export const CasinoReel: React.FC<CasinoReelProps> = ({
       const nextY = easeOutCubic * targetOffsetY;
       setCurrentY(nextY);
 
-      // Play tick audio with dynamic pitch & frequency
-      if (now - lastTickTimeRef.current > tickIntervalRef.current) {
-        // Pitch slows down and lowers as deceleration progresses
-        const pitch = Math.max(0.6, 1.4 - easeOutCubic * 0.7);
-        soundManager.playTick(pitch);
-        lastTickTimeRef.current = now;
-        // Increase interval between clicks as it slows down
-        tickIntervalRef.current = 40 + Math.pow(progress, 3) * 350;
-      }
+      // Play tick audio with safety
+      try {
+        if (now - lastTickTimeRef.current > tickIntervalRef.current) {
+          const pitch = Math.max(0.6, 1.4 - easeOutCubic * 0.7);
+          soundManager.playTick(pitch);
+          lastTickTimeRef.current = now;
+          tickIntervalRef.current = 45 + Math.pow(progress, 3) * 350;
+        }
+      } catch {}
 
       if (progress < 1) {
         animationFrameRef.current = requestAnimationFrame(animate);
@@ -136,19 +145,20 @@ export const CasinoReel: React.FC<CasinoReelProps> = ({
         // Animation finished
         setCurrentY(targetOffsetY);
         setHasLanded(true);
-        soundManager.playWin();
-
-        // Celebration Confetti
         try {
+          soundManager.playWin();
           confetti({
-            particleCount: 120,
-            spread: 80,
+            particleCount: 90,
+            spread: 70,
             origin: { y: 0.6 },
             colors: ["#FACC15", "#EAB308", "#ff2a5f", "#00f0ff", "#ffffff"],
           });
         } catch {}
 
-        if (onComplete) onComplete();
+        if (!hasCompletedRef.current) {
+          hasCompletedRef.current = true;
+          if (onComplete) onComplete();
+        }
       }
     };
 
@@ -172,11 +182,13 @@ export const CasinoReel: React.FC<CasinoReelProps> = ({
   ]);
 
   const toggleSound = () => {
-    const nextMuted = soundManager.toggleMute();
-    setIsMuted(nextMuted);
-    if (!nextMuted) {
-      soundManager.playTick(1.2);
-    }
+    try {
+      const nextMuted = soundManager.toggleMute();
+      setIsMuted(nextMuted);
+      if (!nextMuted) {
+        soundManager.playTick(1.2);
+      }
+    } catch {}
   };
 
   return (
@@ -240,12 +252,11 @@ export const CasinoReel: React.FC<CasinoReelProps> = ({
 
           {/* Central Target Payline Window Overlay */}
           <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-[100px] z-10 pointer-events-none border-y-2 border-amber-400 bg-amber-400/10 shadow-[0_0_25px_rgba(250,204,21,0.3)] flex items-center justify-between px-3">
-            {/* Payline indicators (pointers on both sides) */}
             <div className="w-0 h-0 border-t-[8px] border-t-transparent border-b-[8px] border-b-transparent border-l-[12px] border-l-amber-400 drop-shadow-[0_0_6px_#facc15]" />
             <div className="w-0 h-0 border-t-[8px] border-t-transparent border-b-[8px] border-b-transparent border-r-[12px] border-r-amber-400 drop-shadow-[0_0_6px_#facc15]" />
           </div>
 
-          {/* Reel Display: Reduced Motion mode vs 3D Scroll Strip */}
+          {/* Reel Display */}
           {reducedMotion ? (
             <div className="h-[260px] flex items-center justify-center">
               <div
@@ -264,7 +275,6 @@ export const CasinoReel: React.FC<CasinoReelProps> = ({
               className="relative h-[260px] flex justify-center items-start overflow-hidden"
               style={{ perspective: "1000px" }}
             >
-              {/* Animated Reel Strip */}
               <div
                 className="w-full flex flex-col items-center will-change-transform"
                 style={{

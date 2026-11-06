@@ -6,23 +6,31 @@ class SoundManager {
 
   constructor() {
     if (typeof window !== "undefined") {
-      const storedMute = localStorage.getItem("fighters_sound_muted");
-      // Default to true (muted) unless user explicitly unmuted
-      this.isMuted = storedMute === null ? true : storedMute === "true";
+      try {
+        const storedMute = localStorage.getItem("fighters_sound_muted");
+        this.isMuted = storedMute === null ? true : storedMute === "true";
+      } catch {
+        this.isMuted = true;
+      }
     }
   }
 
   private getContext(): AudioContext | null {
     if (typeof window === "undefined") return null;
-    if (!this.audioCtx) {
-      const AudioContextClass =
-        window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      if (AudioContextClass) {
-        this.audioCtx = new AudioContextClass();
+    try {
+      if (!this.audioCtx) {
+        const AudioContextClass =
+          window.AudioContext ||
+          (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        if (AudioContextClass) {
+          this.audioCtx = new AudioContextClass();
+        }
       }
-    }
-    if (this.audioCtx && this.audioCtx.state === "suspended") {
-      this.audioCtx.resume();
+      if (this.audioCtx && this.audioCtx.state === "suspended") {
+        this.audioCtx.resume().catch(() => {});
+      }
+    } catch {
+      return null;
     }
     return this.audioCtx;
   }
@@ -33,13 +41,18 @@ class SoundManager {
 
   public setMuted(muted: boolean): void {
     this.isMuted = muted;
-    if (typeof window !== "undefined") {
-      localStorage.setItem("fighters_sound_muted", String(muted));
-    }
+    try {
+      if (typeof window !== "undefined") {
+        localStorage.setItem("fighters_sound_muted", String(muted));
+      }
+    } catch {}
   }
 
   public toggleMute(): boolean {
     this.setMuted(!this.isMuted);
+    if (!this.isMuted) {
+      this.getContext(); // Initialize context on user click
+    }
     return this.isMuted;
   }
 
@@ -83,21 +96,23 @@ class SoundManager {
 
       const notes = [523.25, 659.25, 783.99, 1046.5]; // C5, E5, G5, C6
       notes.forEach((freq, idx) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
+        try {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
 
-        osc.type = "sine";
-        osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.12);
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.12);
 
-        gain.gain.setValueAtTime(0, ctx.currentTime + idx * 0.12);
-        gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + idx * 0.12 + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.12 + 0.8);
+          gain.gain.setValueAtTime(0, ctx.currentTime + idx * 0.12);
+          gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + idx * 0.12 + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.12 + 0.8);
 
-        osc.connect(gain);
-        gain.connect(ctx.destination);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
 
-        osc.start(ctx.currentTime + idx * 0.12);
-        osc.stop(ctx.currentTime + idx * 0.12 + 0.8);
+          osc.start(ctx.currentTime + idx * 0.12);
+          osc.stop(ctx.currentTime + idx * 0.12 + 0.8);
+        } catch {}
       });
     } catch {
       // Audio playback silently catches

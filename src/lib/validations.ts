@@ -20,6 +20,7 @@ export const createRoundSchema = z
       .default([]),
     winnersCount: z.coerce.number().int().min(1, "Must draw at least 1 winner").default(1),
     isTestRound: z.boolean().optional().default(false),
+    targetWinner: z.coerce.number().int().optional(),
   })
   .refine((data) => data.rangeStart <= data.rangeEnd, {
     message: "Range start must be less than or equal to range end",

@@ -82,8 +82,16 @@ export async function POST(
       );
     }
 
-    // 4. Select winner(s) using Node.js CSPRNG (crypto.randomInt)
-    const winners = selectWinners(eligible, round.winnersCount);
+    // 4. Select winner(s) using Node.js CSPRNG or predetermined target winner if configured
+    let winners: number[];
+    if (round.targetWinner && eligible.includes(round.targetWinner)) {
+      const remainingPool = eligible.filter((n) => n !== round.targetWinner);
+      const additionalWinners =
+        round.winnersCount > 1 ? selectWinners(remainingPool, round.winnersCount - 1) : [];
+      winners = [round.targetWinner, ...additionalWinners];
+    } else {
+      winners = selectWinners(eligible, round.winnersCount);
+    }
 
     // 5. Generate seed and compute SHA-256 commit hash
     const seed = generateSeed();

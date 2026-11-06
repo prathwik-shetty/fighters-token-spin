@@ -61,6 +61,18 @@ export async function PATCH(
       return NextResponse.json({ error: "Round not found" }, { status: 404 });
     }
 
+    const body = await req.json().catch(() => ({}));
+
+    // Allow setting / updating predetermined target winner
+    if (body.targetWinner !== undefined) {
+      const target = body.targetWinner ? parseInt(body.targetWinner, 10) : null;
+      await prisma.round.update({
+        where: { id: params.roundId },
+        data: { targetWinner: target },
+      });
+      return NextResponse.json({ success: true, message: "Target winner updated", targetWinner: target });
+    }
+
     if (!round.isTestRound) {
       return NextResponse.json(
         { error: "Only test rounds can be reset or re-run" },

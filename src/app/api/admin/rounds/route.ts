@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { name, rangeStart, rangeEnd, exclusions = [], winnersCount, isTestRound } = parsed.data;
+    const { name, rangeStart, rangeEnd, exclusions = [], winnersCount, isTestRound, targetWinner } = parsed.data;
 
     // Build eligible numbers list
     const eligibleNumbers = buildEligibleNumbers(rangeStart, rangeEnd, exclusions);
@@ -57,6 +57,7 @@ export async function POST(req: NextRequest) {
         rangeEnd,
         winnersCount,
         isTestRound,
+        targetWinner: targetWinner && eligibleNumbers.includes(targetWinner) ? targetWinner : null,
         status: "WAITING",
         createdByAdminId: session.adminId,
         exclusions: {
