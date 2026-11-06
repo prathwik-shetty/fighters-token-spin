@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id           String      @id @default(cuid())
+  email        String      @unique
+  passwordHash String
+  totpSecret   String?
+  totpEnabled  Boolean     @default(false)
+  name         String
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  rounds       Round[]
+  spinLogs     SpinLog[]
+  auditLogs    AuditLog[]
+}
+
+model Round {
+  id               String           @id @default(cuid())
+  name             String
+  rangeStart       Int
+  rangeEnd         Int
+  winnersCount     Int              @default(1)
+  isTestRound      Boolean          @default(false)
+  status           String           @default("WAITING") // WAITING, SPINNING, COMPLETED
+  spinStartTime    DateTime?
+  spinDurationMs   Int              @default(8000)
+  seed             String?
+  commitHash       String?
+  createdByAdminId String
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  admin            Admin            @relation(fields: [createdByAdminId], references: [id])
+  exclusions       RoundExclusion[]
+  winners          Winner[]
+  spinLogs         SpinLog[]
+}
+
+model RoundExclusion {
+  id      String @id @default(cuid())
+  roundId String
+  number  Int
+
+  round   Round  @relation(fields: [roundId], references: [id], onDelete: Cascade)
+
+  @@unique([roundId, number])
+}
+
+model Winner {
+  id      String   @id @default(cuid())
+  roundId String
+  number  Int
+  order   Int
+  drawnAt DateTime @default(now())
+
+  round   Round    @relation(fields: [roundId], references: [id], onDelete: Cascade)
+
+  @@unique([roundId, order])
+}
+
+model SpinLog {
+  id          String   @id @default(cuid())
+  roundId     String
+  adminId     String
+  seed        String
+  commitHash  String
+  resultsJson String
+  ipAddress   String?
+  createdAt   DateTime @default(now())
+
+  round       Round    @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  admin       Admin    @relation(fields: [adminId], references: [id])
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  adminId     String?
+  adminEmail  String?
+  action      String
+  detailsJson String?
+  ipAddress   String?
+  createdAt   DateTime @default(now())
+
+  admin       Admin?   @relation(fields: [adminId], references: [id], onDelete: SetNull)
+}
