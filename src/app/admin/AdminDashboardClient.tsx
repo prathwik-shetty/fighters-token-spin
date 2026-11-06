@@ -170,15 +170,19 @@ export default function AdminDashboardClient({ session, initialRounds, initialAu
       const end = parseInt(formRangeEnd, 10);
       const winners = parseInt(formWinnersCount, 10);
 
-      const payload = {
-        name: formName,
+      const trimmedTarget = formTargetWinner.trim();
+      const payload: Record<string, unknown> = {
+        name: formName.trim(),
         rangeStart: start,
         rangeEnd: end,
         exclusions: parsedCreateForm.exclusionsList,
         winnersCount: winners,
         isTestRound: formIsTestRound,
-        targetWinner: formTargetWinner ? parseInt(formTargetWinner, 10) : undefined,
       };
+
+      if (trimmedTarget && !isNaN(parseInt(trimmedTarget, 10))) {
+        payload.targetWinner = parseInt(trimmedTarget, 10);
+      }
 
       const res = await fetch("/api/admin/rounds", {
         method: "POST",
