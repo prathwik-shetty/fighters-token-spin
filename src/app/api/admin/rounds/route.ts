@@ -68,7 +68,8 @@ export async function POST(req: NextRequest) {
       },
       include: {
         exclusions: true,
-        admin: { select: { name: true, email: true } },
+        admin: { select: { id: true, name: true, email: true } },
+        winners: true,
       },
     });
 

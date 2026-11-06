@@ -138,7 +138,8 @@ export default function AdminDashboardClient({ session, initialRounds, initialAu
   // Compute eligible numbers for currently selected round in Arena
   const selectedRoundEligible = useMemo(() => {
     if (!selectedRound) return [];
-    const exSet = new Set(selectedRound.exclusions.map((e) => e.number));
+    const exList = selectedRound.exclusions || [];
+    const exSet = new Set(exList.map((e) => e.number));
     const eligible: number[] = [];
     for (let i = selectedRound.rangeStart; i <= selectedRound.rangeEnd; i++) {
       if (!exSet.has(i)) eligible.push(i);
@@ -190,8 +191,14 @@ export default function AdminDashboardClient({ session, initialRounds, initialAu
         throw new Error(data.error || "Failed to create round");
       }
 
+      const formattedRound = {
+        ...data.round,
+        exclusions: data.round.exclusions || [],
+        winners: data.round.winners || [],
+      };
+
       setFormSuccess(`Round "${data.round.name}" created successfully!`);
-      setRounds((prev) => [data.round, ...prev]);
+      setRounds((prev) => [formattedRound, ...prev]);
       setSelectedRoundId(data.round.id);
 
       // Reset form
@@ -288,7 +295,7 @@ export default function AdminDashboardClient({ session, initialRounds, initialAu
   };
 
   const primaryWinnerNumber =
-    selectedRound && selectedRound.winners.length > 0
+    selectedRound && selectedRound.winners && selectedRound.winners.length > 0
       ? selectedRound.winners[0].number
       : null;
 
@@ -438,7 +445,7 @@ export default function AdminDashboardClient({ session, initialRounds, initialAu
                       <div className="flex justify-between">
                         <span className="text-slate-400">Exclusions:</span>
                         <span className="font-mono text-amber-400 font-semibold">
-                          {selectedRound.exclusions.length} numbers
+                          {(selectedRound.exclusions || []).length} numbers
                         </span>
                       </div>
                       <div className="flex justify-between">
@@ -484,14 +491,14 @@ export default function AdminDashboardClient({ session, initialRounds, initialAu
                     </div>
 
                     {/* Exclusions Display */}
-                    {selectedRound.exclusions.length > 0 && (
+                    {(selectedRound.exclusions || []).length > 0 && (
                       <div className="border border-slate-800 rounded-xl p-3 bg-slate-950/60">
                         <div className="text-xs font-semibold text-slate-300 mb-1 flex items-center gap-1">
                           <Filter className="w-3.5 h-3.5 text-red-400" />
-                          Excluded Numbers ({selectedRound.exclusions.length})
+                          Excluded Numbers ({(selectedRound.exclusions || []).length})
                         </div>
                         <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto p-1">
-                          {selectedRound.exclusions.map((e) => (
+                          {(selectedRound.exclusions || []).map((e) => (
                             <span
                               key={e.number}
                               className="px-1.5 py-0.5 rounded bg-red-950/40 border border-red-500/20 text-[10px] font-mono text-red-300"
@@ -577,14 +584,14 @@ export default function AdminDashboardClient({ session, initialRounds, initialAu
                   />
 
                   {/* Multiple Winners Display if winnersCount > 1 */}
-                  {selectedRound.winners.length > 1 && selectedRound.status === "COMPLETED" && (
+                  {(selectedRound.winners || []).length > 1 && selectedRound.status === "COMPLETED" && (
                     <div className="w-full max-w-md mt-6 p-4 rounded-xl bg-slate-950 border border-amber-500/30 text-left">
                       <div className="flex items-center gap-2 text-amber-400 font-bold mb-2 text-xs uppercase">
                         <Trophy className="w-4 h-4" />
-                        <span>All Drawn Winners ({selectedRound.winners.length})</span>
+                        <span>All Drawn Winners ({(selectedRound.winners || []).length})</span>
                       </div>
                       <div className="grid grid-cols-2 gap-2">
-                        {selectedRound.winners.map((w) => (
+                        {(selectedRound.winners || []).map((w) => (
                           <div
                             key={w.order}
                             className="flex justify-between items-center p-2 rounded bg-slate-900 border border-slate-800 text-xs font-mono"
@@ -903,11 +910,11 @@ export default function AdminDashboardClient({ session, initialRounds, initialAu
                             {r.rangeStart} - {r.rangeEnd}
                           </td>
                           <td className="py-3 px-4 font-mono text-slate-400">
-                            {r.exclusions.length} excluded
+                            {(r.exclusions || []).length} excluded
                           </td>
                           <td className="py-3 px-4 font-mono font-bold text-amber-400">
-                            {r.winners.length > 0
-                              ? r.winners.map((w) => `#${w.number}`).join(", ")
+                            {(r.winners || []).length > 0
+                              ? (r.winners || []).map((w) => `#${w.number}`).join(", ")
                               : "--"}
                           </td>
                           <td className="py-3 px-4 text-slate-300">

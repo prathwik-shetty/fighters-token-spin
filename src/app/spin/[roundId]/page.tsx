@@ -109,7 +109,9 @@ export default function PublicSpinPage() {
 
   const isSpinning = round.status === "SPINNING";
   const isCompleted = round.status === "COMPLETED";
-  const primaryWinner = round.winners.length > 0 ? round.winners[0].number : null;
+  const winnersList = round.winners || [];
+  const exclusionsList = round.exclusions || [];
+  const primaryWinner = winnersList.length > 0 ? winnersList[0].number : null;
 
   return (
     <div className="min-h-screen bg-[#07070d] text-white flex flex-col selection:bg-amber-500 selection:text-black">
@@ -164,9 +166,9 @@ export default function PublicSpinPage() {
           </h1>
           <p className="text-slate-400 text-sm max-w-md mx-auto">
             Token pool range: <span className="font-mono text-white font-bold">{round.rangeStart} to {round.rangeEnd}</span>
-            {round.exclusions.length > 0 && (
+            {exclusionsList.length > 0 && (
               <span className="text-slate-500 ml-1">
-                ({round.exclusions.length} excluded)
+                ({exclusionsList.length} excluded)
               </span>
             )}
             {" • "}Winners to draw: <span className="font-mono text-white font-bold">{round.winnersCount}</span>
@@ -189,14 +191,14 @@ export default function PublicSpinPage() {
         </div>
 
         {/* Multi-winner list if more than 1 winner drawn */}
-        {round.winners.length > 1 && isCompleted && (
+        {winnersList.length > 1 && isCompleted && (
           <div className="w-full max-w-md mt-6 p-4 rounded-2xl bg-slate-900/80 border border-amber-500/30 backdrop-blur shadow-xl animate-fade-in">
             <div className="flex items-center gap-2 text-amber-400 font-bold mb-3 text-sm uppercase tracking-wide">
               <Trophy className="w-4 h-4" />
               <span>All Winning Tokens Drawn</span>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              {round.winners.map((w) => (
+              {winnersList.map((w) => (
                 <div
                   key={w.order}
                   className="flex items-center justify-between p-3 rounded-xl bg-slate-950/70 border border-slate-800"
