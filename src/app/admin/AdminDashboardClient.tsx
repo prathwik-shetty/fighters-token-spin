@@ -4,6 +4,7 @@ import React, { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { CasinoReel } from "@/components/CasinoReel";
+import { FullscreenToggle } from "@/components/FullscreenToggle";
 import {
   Play,
   RotateCcw,
@@ -324,6 +325,8 @@ export default function AdminDashboardClient({ session, initialRounds, initialAu
           </div>
 
           <div className="flex items-center gap-2">
+            <FullscreenToggle />
+
             <Link
               href="/verify"
               target="_blank"

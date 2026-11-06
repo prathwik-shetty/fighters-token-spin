@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { CasinoReel } from "@/components/CasinoReel";
+import { FullscreenToggle } from "@/components/FullscreenToggle";
 import { ShieldCheck, Trophy, AlertCircle, RefreshCw, Radio } from "lucide-react";
 
 interface RoundData {
@@ -132,7 +133,9 @@ export default function PublicSpinPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <FullscreenToggle />
+
             {/* Live SSE status indicator */}
             <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-xs font-mono text-slate-300">
               <Radio

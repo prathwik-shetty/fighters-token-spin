@@ -6,8 +6,8 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("🌱 Starting Fighters Token Spin database seed...");
 
-  const demoEmail = process.env.DEMO_ADMIN_EMAIL || "admin@fighterstoken.com";
-  const demoPassword = process.env.DEMO_ADMIN_PASSWORD || "AdminPassword123!";
+  const demoEmail = process.env.DEMO_ADMIN_EMAIL || "gamingnig308@gmail.com";
+  const demoPassword = process.env.DEMO_ADMIN_PASSWORD || "shettybrand";
   const demoTotpSecret = process.env.DEMO_ADMIN_TOTP_SECRET || "JBSWY3DPEHPK3PXP";
 
   const passwordHash = await bcrypt.hash(demoPassword, 10);
