@@ -1,29 +1,16 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Shield, Lock, Mail, KeyRound, AlertCircle, Info, QrCode } from "lucide-react";
+import { Shield, Lock, Mail, KeyRound, AlertCircle } from "lucide-react";
 
 export default function AdminLoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("admin@fighterstoken.com");
-  const [password, setPassword] = useState("AdminPassword123!");
-  const [totpCode, setTotpCode] = useState("123456");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [totpCode, setTotpCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showQr, setShowQr] = useState(false);
-  const [qrImage, setQrImage] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetch("/api/auth/setup-2fa")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.qrDataUrl) {
-          setQrImage(data.qrDataUrl);
-        }
-      })
-      .catch(() => {});
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,54 +50,11 @@ export default function AdminLoginPage() {
             Fighters Admin Portal
           </h1>
           <p className="text-slate-400 text-xs">
-            Admin Dashboard Login
+            Restricted Administrative Access Only
           </p>
         </div>
 
-        {/* Quick Login Helper Box */}
-        <div className="mb-5 p-4 rounded-xl bg-slate-900 border border-amber-500/40 text-xs text-slate-300 shadow-lg">
-          <div className="flex items-center justify-between mb-2">
-            <span className="flex items-center gap-1.5 text-amber-400 font-bold text-xs">
-              <Info className="w-4 h-4" />
-              <span>Instant 2FA Code</span>
-            </span>
-            <button
-              type="button"
-              onClick={() => setShowQr(!showQr)}
-              className="flex items-center gap-1 text-[11px] text-amber-300 underline hover:text-amber-200"
-            >
-              <QrCode className="w-3.5 h-3.5" />
-              <span>{showQr ? "Hide QR Code" : "Scan QR Code"}</span>
-            </button>
-          </div>
-
-          <div className="space-y-1 font-mono text-[11px] text-slate-300">
-            <div>
-              <span className="text-slate-500">Your Quick 2FA Code:</span>{" "}
-              <span className="text-amber-400 font-bold text-sm bg-slate-950 px-2 py-0.5 rounded border border-amber-500/30">
-                123456
-              </span>
-            </div>
-            <p className="text-[11px] text-slate-400 pt-1">
-              You can simply use <strong className="text-white">123456</strong>, or scan the QR code in Google Authenticator.
-            </p>
-          </div>
-
-          {/* Optional QR Code Popup */}
-          {showQr && qrImage && (
-            <div className="mt-3 pt-3 border-t border-slate-800 flex flex-col items-center text-center animate-fade-in">
-              <div className="p-2 bg-white rounded-xl shadow-lg mb-2">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={qrImage} alt="TOTP QR Code" className="w-40 h-40" />
-              </div>
-              <p className="text-[10px] text-slate-400">
-                Point Google Authenticator / Authy camera at this QR code to add it to your phone.
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Login Form */}
+        {/* Secure Login Form */}
         <form
           onSubmit={handleSubmit}
           className="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-7 shadow-2xl space-y-4"
@@ -133,7 +77,7 @@ export default function AdminLoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@fighterstoken.com"
+                placeholder="admin@example.com"
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-white placeholder-slate-600 focus:outline-none focus:border-amber-500 text-sm"
               />
             </div>
@@ -158,18 +102,18 @@ export default function AdminLoginPage() {
 
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-amber-300 mb-1.5 flex justify-between">
-              <span>2FA Code</span>
-              <span className="text-[11px] text-amber-400 font-mono">Use 123456</span>
+              <span>Security Code (2FA)</span>
+              <span className="text-[10px] text-slate-500 font-normal">6 Digits</span>
             </label>
             <div className="relative">
               <KeyRound className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-amber-500" />
               <input
-                type="text"
+                type="password"
                 required
                 maxLength={6}
                 value={totpCode}
                 onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, ""))}
-                placeholder="123456"
+                placeholder="••••••"
                 className="w-full bg-slate-950 border border-amber-500/40 rounded-xl pl-10 pr-4 py-2.5 text-amber-300 placeholder-slate-600 focus:outline-none focus:border-amber-400 font-mono text-center tracking-widest text-lg font-bold"
               />
             </div>
